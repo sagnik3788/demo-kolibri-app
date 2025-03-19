@@ -26,17 +26,16 @@ jobs:
 
     - name: Install WebView2
       run: |
-        echo "Checking for WebView2..."
-        powershell -Command "try { Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\EdgeUpdate\Clients' } catch { exit 1 }" >nul 2>&1
-        if errorlevel 1 (
-          echo "WebView2 not found. Installing..."
-          powershell -Command "& { Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/p/?LinkId=2124703' -OutFile 'WebView2Setup.exe' }"
-          cmd /c WebView2Setup.exe /silent /install
-          del WebView2Setup.exe
-          echo "WebView2 installed successfully."
-        ) else (
-          echo "WebView2 is already installed."
-        )
+        $webview2 = Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\EdgeUpdate\Clients\*" -ErrorAction SilentlyContinue
+        if ($null -eq $webview2) {
+          Write-Host "WebView2 not found. Installing..."
+          Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/p/?LinkId=2124703' -OutFile 'WebView2Setup.exe'
+          Start-Process -FilePath 'WebView2Setup.exe' -ArgumentList '/silent', '/install' -NoNewWindow -Wait
+          Remove-Item -Force WebView2Setup.exe
+          Write-Host "WebView2 installed successfully."
+        } else {
+          Write-Host "WebView2 is already installed."
+        }
 
     - name: Download the whl file from URL and install
       if: ${{ inputs.whl-url }}
@@ -63,7 +62,10 @@ jobs:
 
     - name: Get installer filename
       id: get-installer-filename
-      run: echo "installer-file-name=$(ls dist | grep .exe | cat)" >> $GITHUB_OUTPUT
+      shell: pwsh
+      run: |
+        $installerFile = Get-ChildItem -Path dist -Filter "*.exe" | Select-Object -ExpandProperty Name
+        echo "installer-file-name=$installerFile" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
     - uses: actions/upload-artifact@v4
       with:
