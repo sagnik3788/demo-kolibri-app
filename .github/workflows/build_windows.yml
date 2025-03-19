@@ -7,7 +7,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        repository: learningequality/kolibri-app
+        repository: sagnik3788/demo-pvt
         ref: ${{ inputs.ref }}
 
     - name: Setup Python
@@ -19,7 +19,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~\AppData\Local\pip\Cache
-        key: windows-pip-${{ hashFiles('setup.py', 'build_requires.txt', '.github/workflows/build_windows.yml') }}
+        key: windows-pip-${{ hashFiles('setup.py', 'build_requires.txt', 'build_windows.yml') }}
 
     - name: Install dependencies
       run: make dependencies
