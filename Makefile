@@ -1,5 +1,5 @@
 .PHONY: clean get-whl install-whl clean-whl build-mac-app pyinstaller build-dmg compile-mo codesign-windows needs-version
-.PHONY: check-webview install-webview
+.PHONY: install-webview2
 
 ifeq ($(OS),Windows_NT)
     OSNAME := WIN32
@@ -43,7 +43,7 @@ install-whl:
 
 install-webview2:
 	@echo "Checking for WebView2..."
-	reg query "HKLM\SOFTWARE\Microsoft\EdgeUpdate\Clients" >nul 2>&1 \
+	@powershell -Command "try { Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\EdgeUpdate\Clients' } catch { exit 1 }" >nul 2>&1 \
 	|| (echo "WebView2 not found. Installing..." && powershell -Command "& { Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/p/?LinkId=2124703' -OutFile 'WebView2Setup.exe' }" && \
 	cmd /c WebView2Setup.exe /silent /install && del WebView2Setup.exe && echo "WebView2 installed successfully.")
 
