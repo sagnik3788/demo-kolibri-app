@@ -30,6 +30,6 @@ setup(
     include_package_data=True,
     zip_safe=True,
     license="MIT",
-    install_requires=["wxPython==4.2.0", "cryptography==42.0.2", "cffi==1.14.4", "pystray==0.19.5"],
+    install_requires=["wxPython==4.2.0", "cryptography==42.0.2", "cffi==1.17.1", "pystray==0.19.5"],
     extras_require={"dev": ["pre-commit"]},
 )
