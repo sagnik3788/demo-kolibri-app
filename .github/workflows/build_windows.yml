@@ -1,43 +1,3 @@
-name: Build Windows installer
-
-on:
-  workflow_dispatch:
-    inputs:
-      whl-url:
-        description: 'URL for Kolibri whl file'
-        required: true
-      release:
-        description: 'Is this a release asset?'
-        required: false
-        type: boolean
-        default: false
-  workflow_call:
-    inputs:
-      whl-file-name:
-        required: false
-        type: string
-      whl-url:
-        required: false
-        type: string
-      ref:
-        required: false
-        type: string
-      release:
-        required: false
-        type: boolean
-        default: false
-    secrets:
-      KOLIBRI_WINDOWS_CERTIFICATE:
-        required: false
-      KOLIBRI_WINDOWS_CERTIFICATE_PASSWORD:
-        required: false
-      KOLIBRI_WINDOWS_SIGNING_TOOL:
-        required: false
-    outputs:
-      installer-file-name:
-        description: "Installer file name"
-        value: ${{ jobs.build_installer.outputs.installer-file-name }}
-
 jobs:
   build_installer:
     runs-on: windows-latest
@@ -49,40 +9,62 @@ jobs:
       with:
         repository: learningequality/kolibri-app
         ref: ${{ inputs.ref }}
+
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
+
     - name: Cache pip dependencies
       uses: actions/cache@v4
       with:
         path: ~\AppData\Local\pip\Cache
         key: windows-pip-${{ hashFiles('setup.py', 'build_requires.txt', '.github/workflows/build_windows.yml') }}
+
     - name: Install dependencies
       run: make dependencies
+
     - name: Install WebView2
-      run: make install-webview2
+      run: |
+        echo "Checking for WebView2..."
+        powershell -Command "try { Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\EdgeUpdate\Clients' } catch { exit 1 }" >nul 2>&1
+        if errorlevel 1 (
+          echo "WebView2 not found. Installing..."
+          powershell -Command "& { Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/p/?LinkId=2124703' -OutFile 'WebView2Setup.exe' }"
+          cmd /c WebView2Setup.exe /silent /install
+          del WebView2Setup.exe
+          echo "WebView2 installed successfully."
+        ) else (
+          echo "WebView2 is already installed."
+        )
+
     - name: Download the whl file from URL and install
       if: ${{ inputs.whl-url }}
       run: make get-whl whl=${{ inputs.whl-url }}
+
     - name: Download the whl file from artifacts
       if: ${{ inputs.whl-file-name }}
       uses: actions/download-artifact@v4
       with:
         name: ${{ inputs.whl-file-name }}
         path: whl
+
     - name: Install WHL file from artifacts
       if: ${{ inputs.whl-file-name }}
       run: make install-whl whl=whl/${{ inputs.whl-file-name }}
+
     - name: Build the Windows installer
       run: make build-windows-installer
+
     - name: Sign the installer
       if: ${{ inputs.release }}
       run: |
         signtool sign /f "${{ secrets.KOLIBRI_WINDOWS_CERTIFICATE }}" /p "${{ secrets.KOLIBRI_WINDOWS_CERTIFICATE_PASSWORD }}" /t http://timestamp.digicert.com dist/*.exe
+
     - name: Get installer filename
       id: get-installer-filename
       run: echo "installer-file-name=$(ls dist | grep .exe | cat)" >> $GITHUB_OUTPUT
+
     - uses: actions/upload-artifact@v4
       with:
         name: ${{ steps.get-installer-filename.outputs.installer-file-name }}
