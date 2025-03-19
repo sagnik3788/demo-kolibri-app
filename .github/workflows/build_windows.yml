@@ -64,18 +64,24 @@ jobs:
     - name: Install dependencies
       run: make dependencies
 
-    - name: Install WebView2
+    # ✅ Cache WebView2 Fixed Version
+    - name: Cache WebView2 Fixed Version
+      uses: actions/cache@v4
+      with:
+        path: C:\webview2
+        key: webview2-fixed-${{ runner.os }}
+
+    # ✅ Download WebView2 Fixed Version
+    - name: Download and Extract WebView2 Fixed Version
       shell: pwsh
       run: |
-        $webview2 = Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\EdgeUpdate\Clients\*" -ErrorAction SilentlyContinue
-        if ($null -eq $webview2) {
-          Write-Host "WebView2 not found. Installing..."
-          Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/p/?LinkId=2124703' -OutFile 'WebView2Setup.exe'
-          Start-Process -FilePath 'WebView2Setup.exe' -ArgumentList '/silent', '/install' -NoNewWindow -Wait
-          Remove-Item -Force WebView2Setup.exe
-          Write-Host "WebView2 installed successfully."
+        if (-Not (Test-Path "C:\webview2")) {
+          Write-Host "Downloading WebView2 Fixed Version..."
+          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile "WebView2.zip"
+          Expand-Archive -Path "WebView2.zip" -DestinationPath "C:\webview2"
+          Remove-Item "WebView2.zip"
         } else {
-          Write-Host "WebView2 is already installed."
+          Write-Host "WebView2 is already cached."
         }
 
     - name: Download the whl file from URL and install
@@ -92,6 +98,12 @@ jobs:
     - name: Install WHL file from artifacts
       if: ${{ inputs.whl-file-name }}
       run: make install-whl whl=whl/${{ inputs.whl-file-name }}
+
+    # ✅ Ensure WebView2 is Included in the Installer
+    - name: Package Installer with WebView2
+      run: |
+        mkdir -Force "dist/webview2"
+        Copy-Item -Path "C:\webview2\*" -Destination "dist/webview2" -Recurse
 
     - name: Build the Windows installer
       run: make build-windows-installer
