@@ -41,13 +41,11 @@ install-whl:
 	# This doesn't exist in 0.15, so don't error if it doesn't exist.
 	echo "3.3.1" > kolibrisrc/kolibri/dist/importlib_resources/version.txt || true
 
-# Install WebView2 Runtime on Windows
-ifeq ($(OSNAME),WIN32)
+install-webview2:
 	@echo "Checking for WebView2..."
-	powershell -Command "& { if (-not (Get-Command 'reg query HKLM\SOFTWARE\Microsoft\EdgeUpdate\Clients' -ErrorAction SilentlyContinue)) { exit 1 } }" \
-	|| (echo "WebView2 not found. Installing..." && curl -o WebView2Setup.exe https://go.microsoft.com/fwlink/p/?LinkId=2124703 && \
-	start /wait WebView2Setup.exe /silent /install && del WebView2Setup.exe && echo "WebView2 installed successfully.")
-endif
+	reg query "HKLM\SOFTWARE\Microsoft\EdgeUpdate\Clients" >nul 2>&1 \
+	|| (echo "WebView2 not found. Installing..." && powershell -Command "& { Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/p/?LinkId=2124703' -OutFile 'WebView2Setup.exe' }" && \
+	cmd /c WebView2Setup.exe /silent /install && del WebView2Setup.exe && echo "WebView2 installed successfully.")
 
 	$(MAKE) loading-pages
 
