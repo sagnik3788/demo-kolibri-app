@@ -72,16 +72,16 @@ jobs:
         key: webview2-fixed-${{ runner.os }}
 
     # ✅ Download WebView2 Fixed Version
-    - name: Download and Extract WebView2 Fixed Version
+    - name: Download and Install WebView2 Fixed Version
       shell: pwsh
       run: |
         if (-Not (Test-Path "C:\webview2")) {
           Write-Host "Downloading WebView2 Fixed Version..."
-          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile "WebView2.zip"
-          Expand-Archive -Path "WebView2.zip" -DestinationPath "C:\webview2"
-          Remove-Item "WebView2.zip"
-        } else {
-          Write-Host "WebView2 is already cached."
+          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile "C:\webview2installer.exe"
+          Start-Process -FilePath "C:\webview2installer.exe" -ArgumentList "/silent /install" -NoNewWindow -Wait
+        }
+        else {
+           Write-Host "WebView2 is already installed."
         }
 
     - name: Download the whl file from URL and install

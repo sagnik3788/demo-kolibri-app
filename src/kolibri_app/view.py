@@ -56,13 +56,12 @@ class KolibriView(object):
         self.view.SetMinSize((350, 400))
 
         
-        # if wx.html2.WebView.IsBackendAvailable(wx.html2.WebViewBackendEdge):  #for windows (Chromium)
-        #     backend = wx.html2.WebViewBackendEdge
-        #     print("WebView2 is available, using Edge backend.")
-        # else:
-        #     backend = wx.html2.WebViewBackendDefault  #for mac (safari)
-        #     print("WebView2 is not available, falling back to default backend.")
-        backend = html2.WebViewBackendDefault
+        if wx.html2.WebView.IsBackendAvailable(wx.html2.WebViewBackendEdge):  #for windows (Chromium)
+            backend = wx.html2.WebViewBackendEdge
+            print("WebView2 is available, using Edge backend.")
+        else:
+            backend = wx.html2.WebViewBackendDefault  #for mac (safari)
+            print("WebView2 is not available, falling back to default backend.")
             
 
         self.webview = html2.WebView.New(self.view, backend=backend)
