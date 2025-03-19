@@ -60,8 +60,8 @@ jobs:
         key: windows-pip-${{ hashFiles('setup.py', 'build_requires.txt', '.github/workflows/build_windows.yml') }}
     - name: Install dependencies
       run: make dependencies
-    # - name: Install WebView2
-    #   run: make install-webview2
+    - name: Install WebView2
+      run: make install-webview2
     - name: Download the whl file from URL and install
       if: ${{ inputs.whl-url }}
       run: make get-whl whl=${{ inputs.whl-url }}
