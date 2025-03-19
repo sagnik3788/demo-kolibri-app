@@ -129,11 +129,9 @@ dmypy.json
 .pyre/
 
 # ignores specific to this project.
-*.whl
 src/kolibri_app/assets
 # generated files
 tmpenv
-whl
 package
 kolibrisrc
 hooks/kolibri_plugins_entrypoints_hook.py
