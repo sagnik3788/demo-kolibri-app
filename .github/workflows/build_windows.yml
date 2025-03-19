@@ -1,3 +1,43 @@
+name: Build Windows installer
+
+on:
+  workflow_dispatch:
+    inputs:
+      whl-url:
+        description: 'URL for Kolibri whl file'
+        required: true
+      release:
+        description: 'Is this a release asset?'
+        required: false
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      whl-file-name:
+        required: false
+        type: string
+      whl-url:
+        required: false
+        type: string
+      ref:
+        required: false
+        type: string
+      release:
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      KOLIBRI_WINDOWS_CERTIFICATE:
+        required: false
+      KOLIBRI_WINDOWS_CERTIFICATE_PASSWORD:
+        required: false
+      KOLIBRI_WINDOWS_SIGNING_TOOL:
+        required: false
+    outputs:
+      installer-file-name:
+        description: "Installer file name"
+        value: ${{ jobs.build_installer.outputs.installer-file-name }}
+
 jobs:
   build_installer:
     runs-on: windows-latest
@@ -25,6 +65,7 @@ jobs:
       run: make dependencies
 
     - name: Install WebView2
+      shell: pwsh
       run: |
         $webview2 = Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\EdgeUpdate\Clients\*" -ErrorAction SilentlyContinue
         if ($null -eq $webview2) {
@@ -64,8 +105,12 @@ jobs:
       id: get-installer-filename
       shell: pwsh
       run: |
-        $installerFile = Get-ChildItem -Path dist -Filter "*.exe" | Select-Object -ExpandProperty Name
-        echo "installer-file-name=$installerFile" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+        $installerFile = Get-ChildItem -Path dist -Filter "*.exe" | Select-Object -First 1 -ExpandProperty Name
+        echo "installer-file-name=$installerFile" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+    - name: Debug installer file
+      run: |
+        echo "Installer file: ${{ steps.get-installer-filename.outputs.installer-file-name }}"
 
     - uses: actions/upload-artifact@v4
       with:
